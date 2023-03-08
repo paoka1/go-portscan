@@ -28,7 +28,7 @@
 ### Todo
 
 - [x] 全连接扫描（connect）
-- [ ] 半连接扫描（syn）
+- [ ] 半开放扫描（syn）
 
 ### Thanks to
 
