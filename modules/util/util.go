@@ -13,7 +13,7 @@ import (
 // SetParam 处理 ip、port 参数
 func SetParam() {
 	base.Parse()
-	if base.Mode != "connect" {
+	if base.Mode != "connect" && base.Mode != "syn" {
 		log.Fatalf("unknow mode %s", base.Mode)
 	}
 	SetIpList()
@@ -34,6 +34,10 @@ func SetIpList() {
 	if base.RawIps == "" {
 		flag.PrintDefaults()
 		log.Fatalf("missing ip parameter")
+	}
+
+	if strings.Contains(base.RawIps, ",") {
+		log.Fatalf("multiple different ip parameters are not allowed")
 	}
 
 	addressList, err := iprange.ParseList(base.RawIps)
@@ -70,13 +74,13 @@ func SetPortList() {
 			}
 
 			for i := p1; i <= p2; i++ {
-				base.Ports = append(base.Ports, i)
+				base.Ports = append(base.Ports, uint16(i))
 			}
 		} else {
 			if port, err := strconv.Atoi(r); err != nil {
 				log.Fatalf("invalid port number: '%s'", r)
 			} else {
-				base.Ports = append(base.Ports, port)
+				base.Ports = append(base.Ports, uint16(port))
 			}
 		}
 	}

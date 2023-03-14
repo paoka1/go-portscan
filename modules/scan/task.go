@@ -1,20 +1,22 @@
 package scan
 
 import (
-	"fmt"
 	"go-portscan/internal/base"
 	"go-portscan/modules/scan/connect"
-	"strings"
+	"go-portscan/modules/scan/syn"
+	"log"
+	"net"
 	"sync"
+	"time"
 )
 
 // GenerateTask 生成扫描任务
-func GenerateTask() ([]map[string]int, int) {
-	tasks := make([]map[string]int, 0)
+func GenerateTask() ([]map[string]uint16, int) {
+	tasks := make([]map[string]uint16, 0)
 
 	for _, ip := range base.Ips {
 		for _, port := range base.Ports {
-			ipPort := map[string]int{ip.String(): port}
+			ipPort := map[string]uint16{ip.String(): port}
 			tasks = append(tasks, ipPort)
 		}
 	}
@@ -23,7 +25,7 @@ func GenerateTask() ([]map[string]int, int) {
 }
 
 // AssigningTasks 分配任务
-func AssigningTasks(tasks []map[string]int) {
+func AssigningTasks(tasks []map[string]uint16) {
 	scanBatch := len(tasks) / base.ThreadNum
 
 	for i := 0; i < scanBatch; i++ {
@@ -38,51 +40,38 @@ func AssigningTasks(tasks []map[string]int) {
 }
 
 // RunTask 执行任务
-func RunTask(tasks []map[string]int) {
+func RunTask(tasks []map[string]uint16) {
 	var wg sync.WaitGroup
 	wg.Add(len(tasks))
+
 	// 每次创建 len(tasks) 个 goroutine，每个 goroutine 只处理一个 ip:port 对的检测
-	for _, task := range tasks {
-		for ip, port := range task {
-			if base.Mode == "connect" {
-				go func(ip string, port int) {
-					err := SaveResult(connect.Connect(ip, port))
-					_ = err
+	if base.Mode == "connect" {
+		// connect
+		for _, task := range tasks {
+			for ip, port := range task {
+				go func(ip string, port uint16) {
+					_ = connect.SaveResult(connect.Connect(ip, port))
 					wg.Done()
 				}(ip, port)
 			}
 		}
+	} else {
+		// syn
+		ss := syn.ScanSyn(string(base.Ips[0]))
+		go ss.ListenPackage()
+		ss.GetGatewayMac()
+		for _, task := range tasks {
+			for ip, port := range task {
+				go func(ip string, port uint16) {
+					err := ss.SendPackage(net.ParseIP(ip), port)
+					if err != nil {
+						log.Print(err)
+					}
+					wg.Done()
+				}(ip, port)
+			}
+		}
+		time.Sleep(time.Second * 2)
 	}
 	wg.Wait()
-}
-
-// SaveResult 保存扫描结果
-func SaveResult(ip string, port int, err error) error {
-	if err != nil {
-		return err
-	}
-
-	v, ok := base.Result.Load(ip)
-	if ok {
-		ports, ok1 := v.([]int)
-		if ok1 {
-			ports = append(ports, port)
-			base.Result.Store(ip, ports)
-		}
-	} else {
-		ports := make([]int, 0)
-		ports = append(ports, port)
-		base.Result.Store(ip, ports)
-	}
-	return err
-}
-
-// PrintResult 打印结果
-func PrintResult() {
-	base.Result.Range(func(key, value interface{}) bool {
-		fmt.Printf("target ip:%v\n", key)
-		fmt.Printf("open ports: %v\n", value)
-		fmt.Println(strings.Repeat("-", 60))
-		return true
-	})
 }
