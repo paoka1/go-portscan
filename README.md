@@ -26,6 +26,10 @@
 ./go_portscan -ip 119.45.241.1/24 -m syn -p 80,8080
 ```
 
+结果示例：
+
+![scan](image/scan.png)
+
 ### Todo
 
 - [x] 全连接扫描（connect）
@@ -34,8 +38,8 @@
 ### Note
 
 1. 半开放扫描需要管理员或 root 权限
-2. 全连接扫描的结果中把端口区分为 Open 和 Filtered，半开放则为 Open、Filtered 和 Closed
-3. 扫描器中 syn 扫描模式有时不稳定，可能会出现结果的偏差
+2. 扫描器中 syn 扫描模式可能会出现结果的偏差
+3. 全连接扫描的结果中把端口区分为 Open 和 Filtered，半开放则为 Open、Filtered 和 Closed
 4. 如运行 Release 中的二进制文件发生错误，请检查依赖，或参考`build`下的脚本重新编译二进制文件
 
 ### Thanks to
