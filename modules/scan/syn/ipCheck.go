@@ -32,32 +32,31 @@ func IsIpExist(ip string) bool {
 // HasPort 判断 port 是否为记录
 func (i *IpPort) HasPort(ip string, port uint16) bool {
 	i.lock.Lock()
+	defer i.lock.Unlock()
+
 	for _, v := range i.IpPosts {
 		if vv, ok := v[ip]; ok {
 			for _, p := range vv {
 				if port == p {
-					i.lock.Unlock()
 					return true
 				}
 			}
-			i.lock.Unlock()
 			return false
 		}
 	}
-	i.lock.Unlock()
 	return false
 }
 
 // RecordPort 记录 port
 func (i *IpPort) RecordPort(ip string, port uint16) {
 	i.lock.Lock()
+	defer i.lock.Unlock()
+
 	for _, v := range i.IpPosts {
 		if vv, ok := v[ip]; ok {
 			v[ip] = append(vv, port)
-			i.lock.Unlock()
 			return
 		}
 	}
 	i.IpPosts = append(i.IpPosts, map[string][]uint16{ip: {port}})
-	i.lock.Unlock()
 }
