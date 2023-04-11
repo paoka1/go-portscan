@@ -13,7 +13,44 @@ import (
 	"time"
 )
 
-type synScan struct {
+// PackCounter 用来记录接收到的有效包的个数
+type PackCounter struct {
+	PackNum int64
+	C       chan int64
+	lock    sync.RWMutex
+}
+
+func (p *PackCounter) Inc() {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.PackNum += 1
+}
+
+// RecNum 获取一秒内获取有效包的个数
+func (p *PackCounter) RecNum() {
+	for {
+		p.C <- p.PackNum
+		time.Sleep(time.Second)
+	}
+}
+
+// AutoCancel 决定我们什么时候退出对响应包的等待
+func AutoCancel(s *Scan) {
+	var num int64
+	numOld := int64(0)
+
+	for {
+		num = <-s.PC.C
+		if num-numOld <= 0 {
+			// 当没有一秒内没有接收到新的有效包，就应该停止监听
+			return
+		}
+		numOld = num
+	}
+}
+
+type Scan struct {
 	// macAddr
 	srcMac, gwMac net.HardwareAddr
 	// eth dev(pcap)
@@ -32,10 +69,12 @@ type synScan struct {
 	bufPool *sync.Pool
 
 	macCache *MacCacheMap
+
+	PC PackCounter
 }
 
-// ScanSyn get synScan struct
-func ScanSyn(ip string) (ss *synScan) {
+// ScanSyn get Scan struct
+func ScanSyn(ip string) (ss *Scan) {
 	srcIp, srcMac, gw, devName, err := GetRouterV4(net.IP(ip))
 	if err != nil {
 		log.Fatalln(err)
@@ -46,7 +85,7 @@ func ScanSyn(ip string) (ss *synScan) {
 		log.Fatalln(err)
 	}
 
-	ss = &synScan{
+	ss = &Scan{
 		srcMac:  srcMac,
 		devName: devName,
 		gw:      gw,
@@ -63,6 +102,10 @@ func ScanSyn(ip string) (ss *synScan) {
 		macCache: &MacCacheMap{
 			MacCache: make(map[string]net.HardwareAddr),
 		},
+		PC: PackCounter{
+			PackNum: 0,
+			C:       make(chan int64),
+		},
 	}
 
 	handle, err := pcap.OpenLive(devName, 1024, false, pcap.BlockForever)
@@ -78,7 +121,7 @@ func ScanSyn(ip string) (ss *synScan) {
 }
 
 // GetGatewayMac Get Gateway mac
-func (ss *synScan) GetGatewayMac() {
+func (ss *Scan) GetGatewayMac() {
 	var err error
 
 	if ss.gw != nil {
@@ -93,7 +136,7 @@ func (ss *synScan) GetGatewayMac() {
 }
 
 // ListenPackage listen packets on the network
-func (ss *synScan) ListenPackage() {
+func (ss *Scan) ListenPackage() {
 	eth := layers.Ethernet{
 		SrcMAC:       ss.srcMac,
 		DstMAC:       nil,
@@ -191,6 +234,7 @@ func (ss *synScan) ListenPackage() {
 					SaveResult(ipLayer.SrcIP.String(), _port, "closed")
 				}
 			}
+			ss.PC.Inc()
 			// Clean tcp parse status
 			tcpLayer.DstPort = 0
 		}
@@ -198,7 +242,7 @@ func (ss *synScan) ListenPackage() {
 }
 
 // SendPackage send packages
-func (ss *synScan) SendPackage(ip net.IP, port uint16) (err error) {
+func (ss *Scan) SendPackage(ip net.IP, port uint16) (err error) {
 	ip = ip.To4()
 	if ip == nil {
 		return errors.New("ip is not ipv4")
@@ -281,7 +325,7 @@ func (ss *synScan) SendPackage(ip net.IP, port uint16) (err error) {
 }
 
 // getHwAddrV4 get the destination hardware address for our packets
-func (ss *synScan) getHwAddrV4(arpDst net.IP) (mac net.HardwareAddr, err error) {
+func (ss *Scan) getHwAddrV4(arpDst net.IP) (mac net.HardwareAddr, err error) {
 	ipStr := arpDst.String()
 
 	// Prepare the layers to send for an ARP request
@@ -330,7 +374,7 @@ func (ss *synScan) getHwAddrV4(arpDst net.IP) (mac net.HardwareAddr, err error) 
 }
 
 // send sends the given layers as a single packet on the network
-func (ss *synScan) send(l ...gopacket.SerializableLayer) error {
+func (ss *Scan) send(l ...gopacket.SerializableLayer) error {
 	buf := ss.bufPool.Get().(gopacket.SerializeBuffer)
 	defer func() {
 		_ = buf.Clear()
@@ -343,7 +387,7 @@ func (ss *synScan) send(l ...gopacket.SerializableLayer) error {
 }
 
 // sendArp send the given layers as a single packet on the network, need fix padding
-func (ss *synScan) sendArp(l ...gopacket.SerializableLayer) error {
+func (ss *Scan) sendArp(l ...gopacket.SerializableLayer) error {
 	buf := ss.bufPool.Get().(gopacket.SerializeBuffer)
 	defer func() {
 		_ = buf.Clear()

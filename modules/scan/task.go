@@ -4,8 +4,6 @@ import (
 	"go-portscan/internal/base"
 	"go-portscan/modules/scan/connect"
 	"go-portscan/modules/scan/syn"
-	"log"
-	"net"
 	"sync"
 	"time"
 )
@@ -26,52 +24,40 @@ func GenerateTask() ([]map[string]uint16, int) {
 
 // AssigningTasks 分配任务
 func AssigningTasks(tasks []map[string]uint16) {
+	var ss *syn.Scan
+	var wg sync.WaitGroup
+	wg.Add(len(tasks))
 	scanBatch := len(tasks) / base.ThreadNum
+
+	if base.Mode == "syn" {
+		ss = syn.ScanSyn(string(base.Ips[0]))
+		go ss.ListenPackage()
+		ss.GetGatewayMac()
+	}
 
 	for i := 0; i < scanBatch; i++ {
 		curTask := tasks[base.ThreadNum*i : base.ThreadNum*(i+1)]
-		RunTask(curTask)
+		if base.Mode == "connect" {
+			connect.Run(curTask, &wg)
+		} else {
+			syn.Run(curTask, ss, &wg)
+		}
 	}
 
 	if len(tasks)%base.ThreadNum > 0 {
 		lastTasks := tasks[base.ThreadNum*scanBatch:]
-		RunTask(lastTasks)
-	}
-}
-
-// RunTask 执行任务
-func RunTask(tasks []map[string]uint16) {
-	var wg sync.WaitGroup
-	wg.Add(len(tasks))
-
-	// 每次创建 len(tasks) 个 goroutine，每个 goroutine 只处理一个 ip:port 对的检测
-	if base.Mode == "connect" {
-		// connect
-		for _, task := range tasks {
-			for ip, port := range task {
-				go func(ip string, port uint16) {
-					_ = connect.SaveResult(connect.Connect(ip, port))
-					wg.Done()
-				}(ip, port)
-			}
+		if base.Mode == "connect" {
+			connect.Run(lastTasks, &wg)
+		} else {
+			syn.Run(lastTasks, ss, &wg)
 		}
-	} else {
-		// syn
-		ss := syn.ScanSyn(string(base.Ips[0]))
-		go ss.ListenPackage()
-		ss.GetGatewayMac()
-		for _, task := range tasks {
-			for ip, port := range task {
-				go func(ip string, port uint16) {
-					err := ss.SendPackage(net.ParseIP(ip), port)
-					if err != nil {
-						log.Print(err)
-					}
-					wg.Done()
-				}(ip, port)
-			}
-		}
-		time.Sleep(time.Second * 2)
 	}
 	wg.Wait()
+
+	// 在 syn 模式，先等待两秒，再根据每秒的包数来判断是否退出
+	if base.Mode == "syn" {
+		time.Sleep(time.Second * 2)
+		go ss.PC.RecNum()
+		syn.AutoCancel(ss)
+	}
 }
