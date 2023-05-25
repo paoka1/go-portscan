@@ -4,26 +4,47 @@
 
 ### Usage
 
-参数：
+使用参数（参数`-h`）：
 
 ```shell
+Usage of go-portscan:
   -ip string
         ip to scan
-  -m string
-        scan mode(connect or syn) (default "connect")
   -p string
         ports to scan (default "21,22,23,80,3306,8080")
+  -syn
+        use syn mode (default connect mode)
   -t int
-        scan threads (default 100)
+        scan threads (default 10)
+  -open
+        only show open ports (default show all results)
+  -output string
+        simultaneously save output to a file (default do not output to any file)
+  -Pn
+        no ping probe (default use ping)
+  -PT
+        use tcp-ping mode (default not use tcp-ping)
+  -conTimeOut int
+        wait time for port response in connect mode (default 2s)
+  -synTimeOut int
+        maximum waiting time when no return packet is received in syn mode (default 2s)
 ```
+
+部分参数说明：
+
+- `-open`：仅显示有 open 端口的结果，默认展示所有结果
+- `-Pn`：默认在扫描端口前使用 ping 检测主机是否存活，该参数可以禁用 ping 的存活检测
+- `-PT`：使用全连接扫描常见端口来判断主机是否存活，默认关闭
+- `-conTimeOut`：程序中全连接的 timeout 时间（在网络条件差时可适当增大）
+- `-synTimeOut`：在 syn 模式下未接收到返回数据包时的最大等待时间（在网络条件差或 syn 扫描结果不佳时可适当增大）
 
 ### Examples
 
 ```shell
 ./go_portscan -ip 192.168.110.1 -p 80
 ./go_portscan -ip 192.168.110.1-10 -p 80-85,8080
-./go_portscan -ip 192.168.110.1/24 -p 80-85,8080 -t 1000
-./go_portscan -ip 119.45.241.1/24 -m syn -p 80,8080
+./go_portscan -ip 192.168.110.1/24 -p 80-85,8080 -t 50
+./go_portscan -ip 192.168.110.1/24 -syn -p 80,8080-8082
 ```
 
 结果示例：

@@ -1,8 +1,10 @@
 package syn
 
 import (
+	"bytes"
 	"fmt"
 	"go-portscan/internal/base"
+	"go-portscan/internal/tool"
 	"strings"
 )
 
@@ -88,21 +90,59 @@ func GetFilteredPort(ip interface{}) {
 
 // PrintResult 打印结果
 func PrintResult() {
+	var buf bytes.Buffer
+
+	if !base.IsShowOpen && (!base.IsNoPing || base.IsTCPPing) {
+		base.ResultOpen.Range(func(key, value interface{}) bool {
+			GetFilteredPort(key)
+			return true
+		})
+
+		for _, ip := range base.Hosts {
+			buf.WriteString(fmt.Sprintf("Target ip:%v\n", ip))
+			opened, _ := base.ResultOpen.Load(ip.String())
+			if opened != nil {
+				buf.WriteString(fmt.Sprintf("Open ports: %v\n", opened))
+			}
+			filtered, _ := base.ResultFiltered.Load(ip.String())
+			if filtered != nil {
+				buf.WriteString(fmt.Sprintf("Filtered ports: %v\n", filtered))
+			}
+			closed, _ := base.ResultClosed.Load(ip.String())
+			if closed != nil {
+				buf.WriteString(fmt.Sprintf("Closed ports: %v\n", closed))
+			}
+			buf.WriteString(fmt.Sprintf(strings.Repeat("-", 60) + "\n"))
+		}
+
+		if buf.Len() != 0 {
+			fmt.Println(strings.TrimRight(buf.String(), "\n"))
+		}
+		tool.SaveToFile(base.FileOutPut, buf)
+		return
+	}
+
 	base.ResultOpen.Range(func(key, value interface{}) bool {
-		fmt.Printf("Target ip:%v\n", key)
+		buf.WriteString(fmt.Sprintf("Target ip:%v\n", key))
 		if value != nil {
-			fmt.Printf("Open ports: %v\n", value)
+			buf.WriteString(fmt.Sprintf("Open ports: %v\n", value))
 		}
 		GetFilteredPort(key)
 		filtered, _ := base.ResultFiltered.Load(key)
 		if filtered != nil {
-			fmt.Printf("Filtered ports: %v\n", filtered)
+			buf.WriteString(fmt.Sprintf("Filtered ports: %v\n", filtered))
 		}
 		closed, _ := base.ResultClosed.Load(key)
 		if closed != nil {
-			fmt.Printf("Closed ports: %v\n", closed)
+			buf.WriteString(fmt.Sprintf("Closed ports: %v\n", closed))
 		}
-		fmt.Println(strings.Repeat("-", 60))
+		buf.WriteString(fmt.Sprintf(strings.Repeat("-", 60) + "\n"))
 		return true
 	})
+
+	if buf.Len() != 0 {
+		fmt.Println(strings.TrimRight(buf.String(), "\n"))
+	}
+	tool.SaveToFile(base.FileOutPut, buf)
+	return
 }

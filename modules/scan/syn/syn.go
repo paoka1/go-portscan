@@ -6,6 +6,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"go-portscan/internal/base"
 	"log"
 	"math/rand"
 	"net"
@@ -27,11 +28,11 @@ func (p *PackCounter) Inc() {
 	p.PackNum += 1
 }
 
-// RecNum 获取一秒内获取有效包的个数
+// RecNum 获取固定时间里内获取有效包的个数
 func (p *PackCounter) RecNum() {
 	for {
 		p.C <- p.PackNum
-		time.Sleep(time.Second)
+		time.Sleep(time.Duration(base.SYNTimeWait) * time.Second)
 	}
 }
 
@@ -43,7 +44,7 @@ func AutoCancel(s *Scan) {
 	for {
 		num = <-s.PC.C
 		if num-numOld <= 0 {
-			// 当没有一秒内没有接收到新的有效包，就应该停止监听
+			// 当没有固定时间内没有接收到新的有效包，就应该停止监听
 			return
 		}
 		numOld = num
@@ -68,9 +69,14 @@ type Scan struct {
 	// buffer 复用
 	bufPool *sync.Pool
 
+	// mac 缓存
 	macCache *MacCacheMap
 
+	// pack counter
 	PC PackCounter
+
+	// ARP Time Out
+	ARPTimeOut bool
 }
 
 // ScanSyn get Scan struct
@@ -106,6 +112,7 @@ func ScanSyn(ip string) (ss *Scan) {
 			PackNum: 0,
 			C:       make(chan int64),
 		},
+		ARPTimeOut: false,
 	}
 
 	handle, err := pcap.OpenLive(devName, 1024, false, pcap.BlockForever)
@@ -129,7 +136,11 @@ func (ss *Scan) GetGatewayMac() {
 		var dstMac net.HardwareAddr
 		dstMac, err = ss.getHwAddrV4(ss.gw)
 		if err != nil {
-			log.Println(err)
+			if err.Error() == "timeout getting ARP reply" {
+				ss.ARPTimeOut = true
+			} else {
+				log.Println(err)
+			}
 		}
 		ss.gwMac = dstMac
 	}
@@ -262,7 +273,15 @@ func (ss *Scan) SendPackage(ip net.IP, port uint16) (err error) {
 		} else {
 			dstMac, err = ss.getHwAddrV4(ip)
 			if err != nil {
-				return
+				if err.Error() == "timeout getting ARP reply" {
+					if ipStr == ss.srcIp.String() {
+						return nil
+					}
+					ss.ARPTimeOut = true
+					return nil
+				} else {
+					return err
+				}
 			}
 		}
 	}

@@ -13,9 +13,6 @@ import (
 // SetParam 处理 ip、port 参数
 func SetParam() {
 	base.Parse()
-	if base.Mode != "connect" && base.Mode != "syn" {
-		log.Fatalf("unknow mode %s", base.Mode)
-	}
 	SetIpList()
 	SetPortList()
 }

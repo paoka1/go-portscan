@@ -12,9 +12,9 @@ func StartTask() {
 }
 
 func PrintResult() {
-	if base.Mode == "connect" {
-		connect.PrintResult()
-	} else {
+	if base.IsSYN {
 		syn.PrintResult()
+	} else {
+		connect.PrintResult()
 	}
 }
