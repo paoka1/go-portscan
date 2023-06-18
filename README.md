@@ -59,9 +59,10 @@ Usage of go-portscan:
 ### Note
 
 1. 半开放扫描需要管理员或 root 权限
-2. 半开放扫描可能会出现结果的偏差，建议降低并发数或进行重试
+2. 半开放扫描可能会出现结果的偏差，建议增大 synTimeOut 降低并发数或进行重试
 3. 全连接扫描的结果中把端口区分为 Open 和 Filtered，半开放则为 Open、Filtered 和 Closed
 4. 如运行 Release 中的二进制文件发生错误，请检查依赖，或参考`build`下脚本的内容重新编译
+5. 本项目仍在开发和测试中，存在不稳定和出现差错的可能性
 
 ### Thanks to
 
