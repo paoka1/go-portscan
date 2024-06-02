@@ -24,7 +24,7 @@ func Parse() {
 
 	flag.Usage = func() {
 		flagSet := flag.CommandLine
-		fmt.Println("Usage of go-portscan:")
+		fmt.Printf("Usage of go-portscan(%s):\n", Version)
 		order := []flagInfo{
 			{"ip", ""},
 			{"p", "\"21,22,23,80,3306,8080\""},
