@@ -1,0 +1,11 @@
+// 交叉编译可能会失败，请在对应系统中编译
+// Linux 可能需要执行这些命令：
+apt update
+apt install libpcap-dev gcc -y
+
+// 构建指令：
+go build ../main.go
+
+// 添加版本信息等（Powershell）：
+$LD_FLAGS="-w -s -X go-portscan/internal/base.Version=vx.x.x"
+go build -o "./bin/go_portscan_windows.exe" -trimpath -ldflags "$LD_FLAGS" ./
