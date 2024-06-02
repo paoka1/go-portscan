@@ -8,4 +8,4 @@ go build ../main.go
 
 // 添加版本信息等（Powershell）：
 $LD_FLAGS="-w -s -X go-portscan/internal/base.Version=vx.x.x"
-go build -o "./bin/go_portscan_windows.exe" -trimpath -ldflags "$LD_FLAGS" ./
+go build -o "./bin/go-portscan_windows.exe" -trimpath -ldflags "$LD_FLAGS" ./
