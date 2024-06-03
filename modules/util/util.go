@@ -37,6 +37,10 @@ func SetIpList() {
 		log.Fatalf("multiple different ip parameters are not allowed")
 	}
 
+	if strings.Contains(base.RawIps, ", ") {
+		log.Fatalf("multiple different ip parameters are not allowed")
+	}
+
 	addressList, err := iprange.ParseList(base.RawIps)
 	if err != nil {
 		log.Fatalf(err.Error())
