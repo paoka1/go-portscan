@@ -95,7 +95,7 @@ func RunGenerateTask(curTasks []net.IP, wg *sync.WaitGroup) []map[string]uint16 
 
 	for _, curTask := range curTasks {
 		go func(curTask net.IP) {
-			if ping.IsHostLive(curTask.String(), base.IsTCPPing, !base.IsNoPing, time.Duration(base.ConTimeOut)*time.Second, wg) {
+			if ping.IsHostLive(curTask.String(), base.IsTCPPing, !base.IsNoPing, time.Duration(base.ConTimeOut)*time.Second) {
 				lock.Lock()
 				base.Hosts = append(base.Hosts, curTask)
 				lock.Unlock()
@@ -106,6 +106,7 @@ func RunGenerateTask(curTasks []net.IP, wg *sync.WaitGroup) []map[string]uint16 
 					lock.Unlock()
 				}
 			}
+			wg.Done()
 		}(curTask)
 	}
 	wg.Wait()

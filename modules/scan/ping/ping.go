@@ -27,7 +27,7 @@ func init() {
 }
 
 // IsHostLive 判断 ip 是否存活
-func IsHostLive(ip string, tcpPing bool, ping bool, tcpTimeout time.Duration, wg *sync.WaitGroup) (ok bool) {
+func IsHostLive(ip string, tcpPing bool, ping bool, tcpTimeout time.Duration) (ok bool) {
 	ok = false
 
 	if ping {
@@ -37,10 +37,10 @@ func IsHostLive(ip string, tcpPing bool, ping bool, tcpTimeout time.Duration, wg
 			ok = DoPing(ip)
 		}
 	}
+
 	if !ok && tcpPing {
 		ok = TcpPing(ip, TcpPingPorts, tcpTimeout)
 	}
-	wg.Done()
 
 	return ok
 }
