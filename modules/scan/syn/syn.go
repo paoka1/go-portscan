@@ -1,8 +1,8 @@
 package syn
 
 /*
-	SYN 扫描的核心实现参考了 https://github.com/XinRoom/go-portScan/tree/main/core/port/syn
-	本项目做了一些更改，包括对 RST 包的监听，对 ip/mac 的缓存等，以适应本扫描器
+	本项目 SYN 扫描的核心实现参考了 https://github.com/XinRoom/go-portScan/tree/main/core/port/syn
+	本项目做了一些更改，包括对 RST 包的监听，对 ip/mac 的缓存，对 syn 监听的限度等，以适应本扫描器
 	该项目使用 Apache-2.0 开源协议，故此说明
 */
 

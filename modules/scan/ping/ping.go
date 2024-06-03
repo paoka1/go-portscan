@@ -1,5 +1,10 @@
 package ping
 
+/*
+	此处 ping 的实现参考了 https://github.com/XinRoom/go-portScan/blob/main/core/host/ping.go
+	该项目使用 Apache-2.0 开源协议，故此说明
+*/
+
 import (
 	"github.com/go-ping/ping"
 	"time"
