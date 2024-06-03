@@ -2,7 +2,7 @@
 
 端口扫描器，支持多线程，支持全连接扫描（connect），支持半开放扫描（syn）
 
-### Usage
+### 用法
 
 使用参数（参数`-h`）：
 
@@ -38,7 +38,7 @@ Usage of go-portscan:
 - `-conTimeOut`：程序中全连接的 timeout 时间（在网络条件差时可适当增大）
 - `-synTimeOut`：在 syn 模式下未接收到返回数据包时的最大等待时间（在网络条件差或 syn 扫描结果不佳时可适当增大）
 
-### Examples
+### 使用示例
 
 ```shell
 ./go_portscan -ip 192.168.110.1 -p 80
@@ -56,17 +56,21 @@ Usage of go-portscan:
 - [x] 全连接扫描（connect）
 - [x] 半开放扫描（syn）
 
-### Note
+### 使用说明
 
 1. 半开放扫描需要管理员或 root 权限
 2. 半开放扫描可能会出现结果的偏差，建议增大 synTimeOut 降低并发数或进行重试
 3. 全连接扫描的结果中把端口区分为 Open 和 Filtered，半开放则为 Open、Filtered 和 Closed
 4. 如运行 Release 中的二进制文件发生错误，请检查依赖，或参考`build`下脚本的内容重新编译
-5. 本项目仍在开发和测试中，存在不稳定和出现差错的可能性
+5. 本项目仍在开发和测试中，可能会不稳定或出现差错
 
-### Thanks to
+### 感谢以下的开源项目
 
-[netxfly](https://github.com/netxfly)、[XinRoom](https://github.com/XinRoom)、[Kevin Darlington](https://github.com/kdar)
+1. [go-portScan](https://github.com/XinRoom/go-portScan)
+2. [sec-dev-in-action-src](https://github.com/netxfly/sec-dev-in-action-src/tree/main/scanner)
+3. [gorawtcpsyn](https://github.com/kdar/gorawtcpsyn)
+
+这些项目为此项目提供了莫大的帮助
 
 ### JetBrains OS licenses
 
