@@ -10,9 +10,11 @@ type flagInfo struct {
 	defaultValue string
 }
 
+var DefaultPorts = "21,22,23,53,80,3306,3389,8080,8081,8888,9000"
+
 func Parse() {
 	flag.StringVar(&RawIps, "ip", "", "ip to scan")
-	flag.StringVar(&RawPorts, "p", "21,22,23,80,3306,8080", "ports to scan")
+	flag.StringVar(&RawPorts, "p", DefaultPorts, "ports to scan")
 	flag.BoolVar(&IsSYN, "syn", false, "use syn mode")
 	flag.IntVar(&ThreadNum, "t", 10, "scan threads")
 	flag.BoolVar(&IsShowOpen, "open", false, "only show open ports")
@@ -27,7 +29,7 @@ func Parse() {
 		fmt.Printf("Usage of go-portscan(%s):\n", Version)
 		order := []flagInfo{
 			{"ip", ""},
-			{"p", "\"21,22,23,80,3306,8080\""},
+			{"p", "\"" + DefaultPorts + "\""},
 			{"syn", "connect mode"},
 			{"t", "10"},
 			{"open", "show all results"},
