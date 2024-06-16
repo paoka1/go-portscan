@@ -1,6 +1,7 @@
 package scan
 
 import (
+	"fmt"
 	"go-portscan/internal/base"
 	"go-portscan/modules/scan/connect"
 	"go-portscan/modules/scan/ping"
@@ -45,6 +46,9 @@ func GenerateTask() ([]map[string]uint16, int) {
 			lastTasks := base.Ips[base.ThreadNum*scanBatch:]
 			tasks = append(tasks, RunGenerateTask(lastTasks, &wg)...)
 		}
+
+		fmt.Println(fmt.Sprintf("%d hosts alive", len(base.Hosts)))
+		fmt.Println("if other hosts alive, please use -Pn and don't use -PT")
 	}
 
 	return tasks, len(tasks)
